@@ -2,8 +2,8 @@ torch>=2.7.0
 torchaudio>=2.7.0
 torchvision>=0.22.0
 torchmetrics>=1.4.0
-numpy<2
-pandas<2.2
+numpy>=2.0
+pandas>=2.2.2
 tqdm
 matplotlib
 soundfile
