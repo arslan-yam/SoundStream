@@ -1,0 +1,46 @@
+defaults:
+  - model: soundstream
+  - writer: cometml
+  - metrics: soundstream
+  - datasets: librispeech
+  - dataloader: soundstream
+  - transforms: soundstream
+  - _self_
+sample_rate: 16000
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 1e-4
+  betas: [0.5, 0.9]
+optimizer_d:
+  _target_: torch.optim.Adam
+  lr: 1e-4
+  betas: [0.5, 0.9]
+lr_scheduler:
+  _target_: torch.optim.lr_scheduler.ConstantLR
+  factor: 1.0
+  total_iters: 1
+lr_scheduler_d:
+  _target_: torch.optim.lr_scheduler.ConstantLR
+  factor: 1.0
+  total_iters: 1
+loss_function:
+  _target_: src.loss.SoundStreamLoss
+  sample_rate: ${sample_rate}
+  lambda_adv: 1.0
+  lambda_feat: 100.0
+  lambda_rec: 1.0
+  lambda_commit: 1.0
+trainer:
+  log_step: 100
+  n_epochs: 90
+  epoch_len: 500
+  device_tensors: ["audio"]
+  resume_from: null
+  device: auto
+  override: False
+  monitor: "max test_STOI"
+  save_period: 5
+  early_stop: ${trainer.n_epochs}
+  save_dir: "saved"
+  seed: 1
+  max_grad_norm: 10

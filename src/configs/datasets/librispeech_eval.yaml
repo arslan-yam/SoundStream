@@ -1,0 +1,6 @@
+test:
+  _target_: src.datasets.LibriSpeechDataset
+  data_dir: ${oc.env:LIBRISPEECH_DIR,data/librispeech}
+  part: "test-clean"
+  sample_rate: ${sample_rate}
+  crop_length: null

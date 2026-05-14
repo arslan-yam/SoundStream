@@ -1,11 +1,21 @@
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
 
+import torch
+from torch.nn.utils import clip_grad_norm_
+
 
 class Trainer(BaseTrainer):
     """
     Trainer class. Defines the logic of batch logging and processing.
     """
+    
+    def __init__(self, *args, optimizer_d=None, lr_scheduler_d=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.optimizer_d = optimizer_d
+        self.lr_scheduler_d = lr_scheduler_d
+        self.sample_rate = self.config.get("sample_rate", 16000)
+
 
     def process_batch(self, batch, metrics: MetricTracker):
         """
@@ -32,24 +42,71 @@ class Trainer(BaseTrainer):
         metric_funcs = self.metrics["inference"]
         if self.is_train:
             metric_funcs = self.metrics["train"]
-            self.optimizer.zero_grad()
-
-        outputs = self.model(**batch)
-        batch.update(outputs)
-
-        all_losses = self.criterion(**batch)
-        batch.update(all_losses)
 
         if self.is_train:
-            batch["loss"].backward()  # sum of all losses is always called loss
-            self._clip_grad_norm()
+            self.optimizer_d.zero_grad()
+            with torch.no_grad():
+                gen_out = self.model(audio=batch["audio"])
+                
+            audio_pred_d = gen_out["audio_pred"].detach()
+            real_outs, _ = self.model.discriminator(batch["audio"])
+            fake_outs, _ = self.model.discriminator(audio_pred_d)
+            loss_d = self.criterion.discriminator_loss(real_outs, fake_outs)
+            loss_d.backward()
+            if self.config["trainer"].get("max_grad_norm", None) is not None:
+                clip_grad_norm_(self.model.discriminator.parameters(), self.config["trainer"]["max_grad_norm"])
+            
+            self.optimizer_d.step()
+            self.optimizer.zero_grad()
+            gen_out = self.model(audio=batch["audio"])
+            batch.update(gen_out)
+            audio_pred = batch["audio_pred"]
+            real_outs, real_feats = self.model.discriminator(batch["audio"])
+            fake_outs, fake_feats = self.model.discriminator(audio_pred)
+
+            loss_adv = self.criterion.adversarial_loss(fake_outs)
+            loss_fm = self.criterion.feature_matching_loss(real_feats, fake_feats)
+            loss_rec = self.criterion.rec_loss(batch["audio"], audio_pred)
+            loss_commit = batch["commit_loss"]
+            loss_g = (self.criterion.lambda_adv * loss_adv + self.criterion.lambda_feat * loss_fm + self.criterion.lambda_rec * loss_rec + self.criterion.lambda_commit * loss_commit)
+            loss_g.backward()
+            
+            if self.config["trainer"].get("max_grad_norm", None) is not None:
+                clip_grad_norm_(self.model.generator.parameters(), self.config["trainer"]["max_grad_norm"])
             self.optimizer.step()
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
+            if self.lr_scheduler_d is not None:
+                self.lr_scheduler_d.step()
 
-        # update metrics for each loss (in case of multiple losses)
+            batch["loss"] = loss_g
+            batch["loss_g"] = loss_g
+            batch["loss_d"] = loss_d
+            batch["loss_adv"] = loss_adv
+            batch["loss_fm"] = loss_fm
+            batch["loss_rec"] = loss_rec
+            batch["loss_commit"] = loss_commit
+        else:
+            gen_out = self.model(audio=batch["audio"])
+            batch.update(gen_out)
+            audio_pred = batch["audio_pred"]
+            loss_rec = self.criterion.rec_loss(batch["audio"], audio_pred)
+            loss_commit = batch["commit_loss"]
+            loss_g = (
+                self.criterion.lambda_rec * loss_rec
+                + self.criterion.lambda_commit * loss_commit
+            )
+            batch["loss"] = loss_g
+            batch["loss_g"] = loss_g
+            batch["loss_d"] = torch.tensor(0.0, device=loss_g.device)
+            batch["loss_adv"] = torch.tensor(0.0, device=loss_g.device)
+            batch["loss_fm"] = torch.tensor(0.0, device=loss_g.device)
+            batch["loss_rec"] = loss_rec
+            batch["loss_commit"] = loss_commit
+
         for loss_name in self.config.writer.loss_names:
-            metrics.update(loss_name, batch[loss_name].item())
+            if loss_name in batch:
+                metrics.update(loss_name, batch[loss_name].item())
 
         for met in metric_funcs:
             metrics.update(met.name, met(**batch))
@@ -67,13 +124,20 @@ class Trainer(BaseTrainer):
             mode (str): train or inference. Defines which logging
                 rules to apply.
         """
-        # method to log data from you batch
-        # such as audio, text or images, for example
+        for i in range(min(2, batch["audio"].shape[0])):
+            T = batch["audio"].shape[-1]
+            if "audio_lengths" in batch:
+                T = batch["audio_lengths"][i].item()
+            real = batch["audio"][i, :, :T]
+            pred = batch["audio_pred"][i, :, :T].clamp(-1, 1)
+            self.writer.add_audio(f"real_{i}", real, sample_rate=self.sample_rate)
+            self.writer.add_audio(f"pred_{i}", pred, sample_rate=self.sample_rate)
 
-        # logging scheme might be different for different partitions
-        if mode == "train":  # the method is called only every self.log_step steps
-            # Log Stuff
-            pass
-        else:
-            # Log Stuff
-            pass
+    @torch.no_grad()
+    def _get_grad_norm(self, norm_type=2):
+        params = self.model.generator.parameters()
+        params = [p for p in params if p.grad is not None]
+        if len(params) == 0:
+            return 0.0
+        total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach(), norm_type) for p in params]), norm_type)
+        return total_norm.item()

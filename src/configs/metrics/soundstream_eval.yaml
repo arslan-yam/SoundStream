@@ -1,0 +1,14 @@
+device: "auto"
+train: []
+inference:
+  - _target_: src.metrics.STOIMetric
+    sample_rate: ${sample_rate}
+    device: ${metrics.device}
+    name: "STOI"
+  - _target_: src.metrics.NISQAMetric
+    sample_rate: ${sample_rate}
+    device: ${metrics.device}
+    name: "NISQA"
+  - _target_: src.metrics.PerplexityMetric
+    codebook_size: 1024
+    name: "Perplexity"

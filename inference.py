@@ -3,10 +3,11 @@ import warnings
 import hydra
 import torch
 from hydra.utils import instantiate
+from omegaconf import OmegaConf
 
 from src.datasets.data_utils import get_dataloaders
 from src.trainer import Inferencer
-from src.utils.init_utils import set_random_seed
+from src.utils.init_utils import set_random_seed, generate_id
 from src.utils.io_utils import ROOT_PATH
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -43,6 +44,16 @@ def main(config):
     # save_path for model predictions
     save_path = ROOT_PATH / "data" / "saved" / config.inferencer.save_path
     save_path.mkdir(exist_ok=True, parents=True)
+    
+    writer = None
+    if config.get("writer") is not None:
+        OmegaConf.set_struct(config, False)
+        if config.writer.get("run_id") is None:
+            config.writer.run_id = generate_id(length=config.writer.id_length)
+        OmegaConf.set_struct(config, True)
+        project_config = OmegaConf.to_container(config)
+        project_config.setdefault("trainer", {"resume_from": None})
+        writer = instantiate(config.writer, None, project_config)
 
     inferencer = Inferencer(
         model=model,
@@ -53,6 +64,7 @@ def main(config):
         save_path=save_path,
         metrics=metrics,
         skip_model_load=False,
+        writer=writer
     )
 
     logs = inferencer.run_inference()
@@ -61,6 +73,9 @@ def main(config):
         for key, value in logs[part].items():
             full_key = part + "_" + key
             print(f"    {full_key:15s}: {value}")
+            if writer is not None:
+                writer.set_step(0, mode=part)
+                writer.add_scalar(f"final_{key}", value)
 
 
 if __name__ == "__main__":

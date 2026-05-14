@@ -1,8 +1,15 @@
 _target_: src.logger.CometMLWriter
-project_name: "pytorch_template"
+project_name: "soundstream"
 workspace: null
-run_name: "testing"
+run_name: "soundstream_baseline"
 mode: "online"
-loss_names: ["loss"] # which losses to log (useful for multi-loss tasks, s.a. GANs)
-log_checkpoints: False # set to True if you want to log save_dir with checkpoints to W&B
-id_length: 32 # length of the run_id
+loss_names:
+  - "loss"
+  - "loss_g"
+  - "loss_d"
+  - "loss_adv"
+  - "loss_fm"
+  - "loss_rec"
+  - "loss_commit"
+log_checkpoints: False
+id_length: 32
