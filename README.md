@@ -28,7 +28,8 @@ PyTorch implementation of [SoundStream: An End-to-End Neural Audio Codec](https:
 - **Discriminators**: 3-scale wave + STFT, hinge GAN + feature matching loss.
 - **Reconstruction**: mel + commitment loss.
 
-The repo is based on the [pytorch-project-template](https://github.com/Blinorot/pytorch_project_template)
+The repo is based on the [pytorch-project-template](https://github.com/Blinorot/pytorch_project_template).
+
 It also contains:
 
 - a **no-GAN model** (same model trained without adversarial / feature-matching loss),
@@ -55,8 +56,6 @@ pip install torchcodec
 brew install ffmpeg
 pip install torchcodec
 
-# 4. (optional) pre-commit hooks
-pre-commit install
 ```
 
 Python 3.11 or 3.12 recommended. For RTX 50xx (for instace I used RTX5090 for training), torch needs the `cu128` index:
@@ -79,7 +78,7 @@ tar -xzf test-clean.tar.gz && rm test-clean.tar.gz
 cd ../..
 ```
 
-### LJSpeech (for the TTS bonus)
+### LJSpeech (for the TTS)
 
 ```bash
 mkdir -p data/ljspeech && cd data/ljspeech
@@ -96,13 +95,13 @@ Both checkpoints live on Google Drive. Download via `gdown`:
 ```python
 import gdown, os
 os.makedirs("saved/ss_final", exist_ok=True)
-os.makedirs("saved/tts_lora", exist_ok=True)
+os.makedirs("saved/tts_lj_lora", exist_ok=True)
 
 # Main SoundStream (GAN) checkpoint
 gdown.download(id="1UchYZOlm3cDxykMwOOhPObgGnGKJdPu-", output="saved/ss_final/model_best.pth", quiet=False)
 
 # TTS LoRA checkpoint
-gdown.download(id="<TTS_FILE_ID>", output="saved/tts_lora/model_best.pth", quiet=False)
+gdown.download(id="<TTS_FILE_ID>", output="saved/tts_lj_lora/model_best.pth", quiet=False)
 ```
 
 (Run as a Python script or copy into a notebook cell.)
@@ -193,7 +192,7 @@ python3 train_tts.py \
   --ljspeech_dir data/ljspeech/LJSpeech-1.1 \
   --n_epochs 30 --batch_size 8 \
   --use_lora --lora_r 8 --lora_alpha 16 \
-  --save_dir saved/tts_lora \
+  --save_dir saved/tts_lj_lora \
   --run_name tts_lj_lora
 ```
 
@@ -203,7 +202,7 @@ Inference on a custom prompt:
 
 ```bash
 python3 inference_tts.py \
-  --checkpoint saved/tts_lora/model_best.pth \
+  --checkpoint saved/tts_lj_lora/model_best.pth \
   --prompt "Hello world, this is my codec TTS model." \
   --use_lora --lora_r 8 --lora_alpha 16 \
   --out_path tts_output.wav \
