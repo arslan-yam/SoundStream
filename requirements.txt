@@ -7,11 +7,15 @@ pandas>=2.2.2
 tqdm
 matplotlib
 soundfile
-librosa
-pystoi
+librosa>=0.10.2
+pystoi>=0.4
 wandb
 comet_ml
 hydra-core
+transformers>=4.40.0
+peft>=0.10.0
+torchcodec
+gdown
 
 black
 isort
