@@ -21,11 +21,14 @@ def main():
     ap.add_argument("--workspace", default="arslan-yamaletdinov")
     ap.add_argument("--project", default="dl-big-hw")
     ap.add_argument("--run_name", default="tts_lj_infer")
+    ap.add_argument("--use_lora", action="store_true")
+    ap.add_argument("--lora_r", type=int, default=8)
+    ap.add_argument("--lora_alpha", type=int, default=16)
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tokenizer = AutoTokenizer.from_pretrained(args.lm_name)
-    model = TTSModel(args.lm_name, args.codec_name).to(device).eval()
+    model = TTSModel(args.lm_name, args.codec_name, use_lora=args.use_lora, lora_r=args.lora_r, lora_alpha=args.lora_alpha).to(device).eval()
     ckpt = torch.load(args.checkpoint, map_location=device, weights_only=False)
     model.load_state_dict(ckpt["state_dict"], strict=False)
     ids = tokenizer.encode(args.prompt, add_special_tokens=False)

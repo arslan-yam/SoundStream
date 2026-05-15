@@ -56,11 +56,14 @@ def main():
     ap.add_argument("--workspace", default="arslan-yamaletdinov")
     ap.add_argument("--project", default="dl-big-hw")
     ap.add_argument("--run_name", default="tts_lj")
+    ap.add_argument("--use_lora", action="store_true")
+    ap.add_argument("--lora_r", type=int, default=8)
+    ap.add_argument("--lora_alpha", type=int, default=16)
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tokenizer = AutoTokenizer.from_pretrained(args.lm_name)
-    model = TTSModel(args.lm_name, args.codec_name).to(device)
+    model = TTSModel(args.lm_name, args.codec_name, use_lora=args.use_lora, lora_r=args.lora_r, lora_alpha=args.lora_alpha).to(device)
     full_ds = LJSpeechDataset(args.ljspeech_dir, tokenizer)
     n_train = len(full_ds) - args.n_val
     train_ds = Subset(full_ds, range(n_train))
@@ -104,7 +107,8 @@ def main():
             step += 1
 
         evaluate(model, val_data, tokenizer, device, stoi, nisqa, exp, epoch)
-        trained = {k: v for k, v in model.state_dict().items() if k.startswith("audio_")}
+        trainable_keys = {n for n, p in model.named_parameters() if p.requires_grad}
+        trained = {k: v for k, v in model.state_dict().items() if k in trainable_keys}
         torch.save({"state_dict": trained, "args": vars(args)}, save_dir / f"model_epoch_{epoch}.pth")
     exp.end()
 

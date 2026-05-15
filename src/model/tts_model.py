@@ -2,15 +2,22 @@ import torch
 import torch.nn.functional
 from torch import nn
 from transformers import AutoModel
+from peft import LoraConfig, get_peft_model
 
 
 class TTSModel(nn.Module):
-    def __init__(self, lm_name="HuggingFaceTB/SmolLM2-135M", codec_name="hf-audio/xcodec-hubert-librispeech", codebook_size=1024):
+    def __init__(self, lm_name="HuggingFaceTB/SmolLM2-135M", codec_name="hf-audio/xcodec-hubert-librispeech", codebook_size=1024, 
+                 use_lora=False, lora_r=8, lora_alpha=16):
         super().__init__()
+        
         self.lm = AutoModel.from_pretrained(lm_name)
         self.codec = AutoModel.from_pretrained(codec_name, trust_remote_code=True)
-        for p in self.lm.parameters():
-            p.requires_grad = False
+        if use_lora:
+            lora_cfg = LoraConfig(r=lora_r, lora_alpha=lora_alpha, lora_dropout=0.05, target_modules=["q_proj", "v_proj"], bias="none")
+            self.lm = get_peft_model(self.lm, lora_cfg)
+        else:
+            for p in self.lm.parameters():
+                p.requires_grad = False
         for p in self.codec.parameters():
             p.requires_grad = False
         self.codec.eval()
