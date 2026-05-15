@@ -1,148 +1,231 @@
-# PyTorch Template for DL projects
+# SoundStream Neural Audio Codec
 
 <p align="center">
   <a href="#about">About</a> •
-  <a href="#tutorials">Tutorials</a> •
-  <a href="#examples">Examples</a> •
   <a href="#installation">Installation</a> •
-  <a href="#how-to-use">How To Use</a> •
-  <a href="#useful-links">Useful Links</a> •
+  <a href="#data">Data</a> •
+  <a href="#training">Training</a> •
+  <a href="#inference--evaluation">Inference & Evaluation</a> •
+  <a href="#demo">Demo</a> •
+  <a href="#bonus-codec-based-tts">Bonus: TTS</a> •
   <a href="#credits">Credits</a> •
   <a href="#license">License</a>
 </p>
 
 <p align="center">
-<a href="https://github.com/Blinorot/pytorch_project_template/generate">
-  <img src="https://img.shields.io/badge/use%20this-template-green?logo=github">
+<a href="https://github.com/Blinorot/pytorch_project_template">
+  <img src="https://img.shields.io/badge/built%20on-pytorch--template-green">
 </a>
-<a href="https://github.com/Blinorot/pytorch_project_template/blob/main/LICENSE">
-   <img src=https://img.shields.io/badge/license-MIT-blue.svg>
-</a>
-<a href="https://github.com/Blinorot/pytorch_project_template/blob/main/CITATION.cff">
-   <img src="https://img.shields.io/badge/cite-this%20repo-purple">
-</a>
+<img src="https://img.shields.io/badge/license-MIT-blue.svg">
 </p>
 
 ## About
 
-This repository contains a template for [PyTorch](https://pytorch.org/)-based Deep Learning projects.
+PyTorch implementation of [SoundStream: An End-to-End Neural Audio Codec](https://arxiv.org/abs/2107.03312) for 16 kHz speech, trained on `train-clean-100` of [LibriSpeech](https://www.openslr.org/12).
 
-The template utilizes different python-dev techniques to improve code readability. Configuration methods enhance reproducibility and experiments control.
+- **Encoder** strides `[2, 4, 5, 5]` — total downsample 200, latent rate 80 Hz at 16 kHz.
+- **Residual Vector Quantizer**: 8 quantizers × 1024 entries → **6.4 kbps**.
+- **Discriminators**: 3-scale wave + STFT, hinge GAN + feature matching loss.
+- **Reconstruction**: mel + commitment loss.
 
-The repository is released as a part of the [HSE DLA course](https://github.com/markovka17/dla), however, can easily be adopted for any DL-task.
+The repo is based on the [pytorch-project-template](https://github.com/Blinorot/pytorch_project_template)
+It also contains:
 
-This template is the official recommended template for the [EPFL CS-433 ML Course](https://www.epfl.ch/labs/mlo/machine-learning-cs-433/).
+- a **no-GAN model** (same model trained without adversarial / feature-matching loss),
+- a **codec-based TTS** system (SmolLM2-135M + X-Codec, LoRA fine-tuning) trained on LJSpeech.
 
-**New:** we added a [HF Main](https://github.com/Blinorot/pytorch_project_template/tree/hf_main) variant of the template with [HuggingFace](https://huggingface.co/) Integration for multi-GPU and multi-node training, automatic mixed precision, gradient accumulation, and seamless HuggingFace Ecosystem Compatibility.
-
-> 📖 **If you use this template in your work, please cite this repository or include a reference. Attribution supports the project and encourages continued development.**
-
-## Tutorials
-
-This template utilizes experiment tracking techniques, such as [WandB](https://docs.wandb.ai/) and [Comet ML](https://www.comet.com/docs/v2/), and [Hydra](https://hydra.cc/docs/intro/) for the configuration. It also automatically reformats code and conducts several checks via [pre-commit](https://pre-commit.com/). If you are not familiar with these tools, we advise you to look at the tutorials below:
-
-- [Python Dev Tips](https://github.com/ebezzam/python-dev-tips): information about [Git](https://git-scm.com/doc), [pre-commit](https://pre-commit.com/), [Hydra](https://hydra.cc/docs/intro/), and other stuff for better Python code development. The YouTube recording of the workshop is available [here](https://youtu.be/okxaTuBdDuY).
-
-- [Seminar on R&D Coding 2025](https://youtu.be/PE1zaW5it_A): Seminar from the [LauzHack Deep Learning Bootcamp](https://github.com/LauzHack/deep-learning-bootcamp/) with discussion on logging, project-based coding, configuration, and reproducibility. The materials can be found [here](https://github.com/LauzHack/deep-learning-bootcamp/tree/summer25/day05).
-
-- [Seminar on R&D Coding 2024](https://youtu.be/sEA-Js5ZHxU): Seminar from the [LauzHack Deep Learning Bootcamp](https://github.com/LauzHack/deep-learning-bootcamp/) with template discussion and reasoning. It also explains how to work with [WandB](https://docs.wandb.ai/). The seminar materials can be found [here](https://github.com/LauzHack/deep-learning-bootcamp/blob/main/day03/Seminar_WandB_and_Coding.ipynb).
-
-- [HSE DLA Course Introduction Week](https://github.com/markovka17/dla/tree/2024/week01): combines the two seminars above into one with some updates, including an extra example for [Comet ML](https://www.comet.com/docs/v2/).
-
-- [PyTorch Basics](https://github.com/markovka17/dla/tree/2024/week01/intro_to_pytorch): several notebooks with [PyTorch](https://pytorch.org/docs/stable/index.html) basics and corresponding seminar recordings from the [LauzHack Deep Learning Bootcamp](https://github.com/LauzHack/deep-learning-bootcamp/).
-
-To start working with a template, just click on the `use this template` button.
-
-<a href="https://github.com/Blinorot/pytorch_project_template/generate">
-  <img src="https://img.shields.io/badge/use%20this-template-green?logo=github">
-</a>
-
-You can choose any of the branches as a starting point. [Set your choice as the default branch](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/changing-the-default-branch) in the repository settings. You can also [delete unnecessary branches](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-and-deleting-branches-within-your-repository).
-
-## Examples
-
-> [!IMPORTANT]
-> The main branch leaves some of the code parts empty or fills them with dummy examples, showing just the base structure. The final users can add code required for their own tasks.
-
-You can find examples of this template completed for different tasks in other branches:
-
-- [HF Main](https://github.com/Blinorot/pytorch_project_template/tree/hf_main): the variant of the `main` branch with [HuggingFace](https://huggingface.co/) Integration. Supports multi-GPU and multi-node training, automatic mixed precision, gradient accumulation, and seamless HuggingFace Ecosystem Compatibility.
-
-- [Image classification](https://github.com/Blinorot/pytorch_project_template/tree/example/image-classification): simple classification problem on [MNIST](https://yann.lecun.com/exdb/mnist/) and [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) datasets.
-
-- [ASR](https://github.com/Blinorot/pytorch_project_template/tree/example/asr): template for the automatic speech recognition (ASR) task. Some of the parts (for example, `collate_fn` and beam search for `text_encoder`) are missing for studying purposes of [HSE DLA course](https://github.com/markovka17/dla).
+All metrics, audio samples, and curves are logged to [Comet ML](https://www.comet.com/)
 
 ## Installation
 
-Installation may depend on your task. The general steps are the following:
-
-0. (Optional) Create and activate new environment using [`conda`](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) or `venv` ([`+pyenv`](https://github.com/pyenv/pyenv)).
-
-   a. `conda` version:
-
-   ```bash
-   # create env
-   conda create -n project_env python=PYTHON_VERSION
-
-   # activate env
-   conda activate project_env
-   ```
-
-   b. `venv` (`+pyenv`) version:
-
-   ```bash
-   # create env
-   ~/.pyenv/versions/PYTHON_VERSION/bin/python3 -m venv project_env
-
-   # alternatively, using default python version
-   python3 -m venv project_env
-
-   # activate env
-   source project_env/bin/activate
-   ```
-
-1. Install all required packages
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. Install `pre-commit`:
-   ```bash
-   pre-commit install
-   ```
-
-## How To Use
-
-To train a model, run the following command:
-
 ```bash
-python3 train.py -cn=CONFIG_NAME HYDRA_CONFIG_ARGUMENTS
+# 1. clone
+git clone https://github.com/arslan-yam/SoundStream.git
+cd SoundStream
+
+# 2. install Python deps
+pip install -r requirements.txt
+
+# 3. ffmpeg + torchcodec (needed by torchaudio.load on torch>=2.7)
+#    Linux:
+apt-get install -y ffmpeg
+pip install torchcodec
+
+#    macOS:
+brew install ffmpeg
+pip install torchcodec
+
+# 4. (optional) pre-commit hooks
+pre-commit install
 ```
 
-Where `CONFIG_NAME` is a config from `src/configs` and `HYDRA_CONFIG_ARGUMENTS` are optional arguments.
-
-To run inference (evaluate the model or save predictions):
+Python 3.11 or 3.12 recommended. For RTX 50xx (for instace I used RTX5090 for training), torch needs the `cu128` index:
 
 ```bash
-python3 inference.py HYDRA_CONFIG_ARGUMENTS
+pip install --force-reinstall torch torchaudio torchvision \
+  --index-url https://download.pytorch.org/whl/cu128
 ```
 
-## Useful Links:
+## Data
 
-You may find the following links useful:
+### LibriSpeech (for the codec)
 
-- [Report branch](https://github.com/Blinorot/pytorch_project_template/tree/report): Guidelines for writing a scientific report/paper (with an emphasis on DL projects).
+```bash
+mkdir -p data/librispeech && cd data/librispeech
+wget https://www.openslr.org/resources/12/train-clean-100.tar.gz
+wget https://www.openslr.org/resources/12/test-clean.tar.gz
+tar -xzf train-clean-100.tar.gz && rm train-clean-100.tar.gz
+tar -xzf test-clean.tar.gz && rm test-clean.tar.gz
+cd ../..
+```
 
-- [CLAIRE Template](https://github.com/CLAIRE-Labo/python-ml-research-template): additional template by [EPFL CLAIRE Laboratory](https://www.epfl.ch/labs/claire/) that can be combined with ours to enhance experiments reproducibility via [Docker](https://www.docker.com/).
+### LJSpeech (for the TTS bonus)
 
-- [Mamba](https://github.com/mamba-org/mamba) and [Poetry](https://python-poetry.org/): alternatives to [Conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) and [pip](https://pip.pypa.io/en/stable/installation/) package managers given above.
+```bash
+mkdir -p data/ljspeech && cd data/ljspeech
+curl -L -o LJSpeech-1.1.tar.bz2 \
+  "https://data.keithito.com/data/speech/LJSpeech-1.1.tar.bz2"
+tar -xjf LJSpeech-1.1.tar.bz2 && rm LJSpeech-1.1.tar.bz2
+cd ../..
+```
 
-- [Awesome README](https://github.com/matiassingers/awesome-readme): a list of awesome README files for inspiration. Check the basics [here](https://github.com/PurpleBooth/a-good-readme-template).
+## Pretrained checkpoints
+
+Both checkpoints live on Google Drive. Download via `gdown`:
+
+```python
+import gdown, os
+os.makedirs("saved/ss_final", exist_ok=True)
+os.makedirs("saved/tts_lora", exist_ok=True)
+
+# Main SoundStream (GAN) checkpoint
+gdown.download(id="1UchYZOlm3cDxykMwOOhPObgGnGKJdPu-", output="saved/ss_final/model_best.pth", quiet=False)
+
+# TTS LoRA checkpoint
+gdown.download(id="<TTS_FILE_ID>", output="saved/tts_lora/model_best.pth", quiet=False)
+```
+
+(Run as a Python script or copy into a notebook cell.)
+
+## Training
+
+### SoundStream (main, with GAN)
+
+```bash
+export COMET_API_KEY=<your_key>
+python3 train.py -cn=soundstream \
+  datasets.train.data_dir=data/librispeech/LibriSpeech \
+  datasets.test.data_dir=data/librispeech/LibriSpeech \
+  trainer.n_epochs=20 trainer.epoch_len=3000 \
+  writer.workspace=arslan-yamaletdinov \
+  writer.project_name=dl-big-hw \
+  writer.run_name=ss_main
+```
+
+Follows the SEANet/SoundStream recipe: Adam `(0.5, 0.9)`, constant LR `1e-4`, 0.5 s random crops, batch size 12, but I changes 450000 to 60 000 total steps (it takes approximately 2 hours on RTX 5090).
+
+### Same model without GAN
+
+```bash
+python3 train.py -cn=soundstream \
+  datasets.train.data_dir=data/librispeech/LibriSpeech \
+  datasets.test.data_dir=data/librispeech/LibriSpeech \
+  loss_function.lambda_adv=0.0 loss_function.lambda_feat=0.0 \
+  trainer.n_epochs=20 trainer.epoch_len=3000 \
+  writer.run_name=ss_no_gan
+```
+
+## Inference and Evaluation
+
+Final metrics on the **full `test-clean`** (STOI / NISQA / Perplexity, full-length audio, batch 1):
+
+```bash
+python3 inference.py \
+  datasets.test.data_dir=data/librispeech/LibriSpeech \
+  inferencer.from_pretrained=saved/ss_final/model_best.pth \
+  writer.run_name=ss_main_final_eval
+```
+
+Qualitative analysis (waveform + STFT + mel-spec side-by-side, audio uploaded to Comet) for a few files:
+
+```bash
+python3 analyze.py \
+  --data_dir data/librispeech/LibriSpeech/test-clean \
+  --n_audio 5 \
+  --checkpoint saved/ss_final/model_best.pth \
+  --run_name ss_analysis
+```
+
+Quantitative stats (SI-SDR, LSD, MCD, band energies, spectral centroid, KL and JS over waveform distributions etc.):
+
+```bash
+python3 stats.py \
+  --data_dir data/librispeech/LibriSpeech/test-clean \
+  --n_files 200 \
+  --checkpoint saved/ss_final/model_best.pth \
+  --comet --run_name ss_stats_test_clean
+```
+
+The same `analyze.py` / `stats.py` were run on a noisy english corpus (voicebank-demand) and russian speech (youtube meme clips via `yt-dlp`) — see the report for cross-corpus comparison.
+
+## Demo
+
+[`demo.ipynb`](demo.ipynb) — runs in Google Colab:
+
+1. Clone repo, install deps.
+2. Download `model_best.pth` from Drive via `gdown`.
+3. Take a user-provided audio URL, run it through the codec, display original and re-synthesized audio.
+
+Just open it in Colab and run the cells. The audio URL in Cell 5 can be replaced with any `.wav` / `.flac` / `.mp3`.
+
+## Codec-based TTS
+
+A small TTS system built on top of:
+
+- **Frozen** [SmolLM2-135M](https://huggingface.co/HuggingFaceTB/SmolLM2-135M) as the LM backbone.
+- **Frozen** [X-Codec](https://huggingface.co/hf-audio/xcodec-hubert-librispeech) — only its **first** RVQ quantizer is used for audio tokens.
+- **Trainable**: an audio token embedding, an LM head over audio vocabulary, and LoRA adapters (`r=8`, `q_proj/v_proj`) inside SmolLM2
+
+Train:
+
+```bash
+python3 train_tts.py \
+  --ljspeech_dir data/ljspeech/LJSpeech-1.1 \
+  --n_epochs 30 --batch_size 8 \
+  --use_lora --lora_r 8 --lora_alpha 16 \
+  --save_dir saved/tts_lora \
+  --run_name tts_lj_lora
+```
+
+Every epoch the script generates audio for 4 held-out LJSpeech prompts and logs `val_STOI`, `val_NISQA`, plus pairs of `real / pred` `.wav` to Comet for listening.
+
+Inference on a custom prompt:
+
+```bash
+python3 inference_tts.py \
+  --checkpoint saved/tts_lora/model_best.pth \
+  --prompt "Hello world, this is my codec TTS model." \
+  --use_lora --lora_r 8 --lora_alpha 16 \
+  --out_path tts_output.wav \
+  --comet --run_name tts_demo
+```
+
+[`demo_tts.ipynb`](demo_tts.ipynb) is the Colab-ready demo for the TTS path.
+
+## Reports
+
+The Comet project [`arslan-yamaletdinov/dl-big-hw`](https://www.comet.com/arslan-yamaletdinov/dl-big-hw/view/) collects:
+
+- training curves of the main GAN model, the no-GAN ablation, and TTS,
+- final STOI / NISQA on full test-clean,
+- analysis runs on `test-clean`, noisy english (voicebank-demand), and Russian (youtube),
+- audio samples for every analysis run.
 
 ## Credits
 
-This repository is based on a heavily modified fork of [pytorch-template](https://github.com/victoresque/pytorch-template) and [asr_project_template](https://github.com/WrathOfGrapes/asr_project_template) repositories.
+Project skeleton: [pytorch-project-template](https://github.com/Blinorot/pytorch_project_template).
+Codec follows the architecture from the [SoundStream paper](https://arxiv.org/abs/2107.03312);
+training recipe follows the [SEANet](https://arxiv.org/abs/2009.02095) setup.
 
 ## License
 
