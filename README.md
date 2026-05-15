@@ -101,7 +101,7 @@ os.makedirs("saved/tts_lj_lora", exist_ok=True)
 gdown.download(id="1UchYZOlm3cDxykMwOOhPObgGnGKJdPu-", output="saved/ss_final/model_best.pth", quiet=False)
 
 # TTS LoRA checkpoint
-gdown.download(id="<TTS_FILE_ID>", output="saved/tts_lj_lora/model_best.pth", quiet=False)
+gdown.download(id="1XV94sTljhD_l76AYl57aT0UtVvwsF34A", output="saved/tts_lj_lora/model_best.pth", quiet=False)
 ```
 
 (Run as a Python script or copy into a notebook cell.)
