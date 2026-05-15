@@ -10,8 +10,8 @@ class TTSModel(nn.Module):
                  use_lora=False, lora_r=8, lora_alpha=16):
         super().__init__()
         
-        self.lm = AutoModel.from_pretrained(lm_name)
-        self.codec = AutoModel.from_pretrained(codec_name, trust_remote_code=True)
+        self.lm = AutoModel.from_pretrained(lm_name, torch_dtype=torch.float32)
+        self.codec = AutoModel.from_pretrained(codec_name, trust_remote_code=True, torch_dtype=torch.float32)
         if use_lora:
             lora_cfg = LoraConfig(r=lora_r, lora_alpha=lora_alpha, lora_dropout=0.05, target_modules=["q_proj", "v_proj"], bias="none")
             self.lm = get_peft_model(self.lm, lora_cfg)
